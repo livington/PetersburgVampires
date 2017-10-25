@@ -69,10 +69,6 @@ class Persons:
             else:
                 return False
 
-    def take_step(self):
-        self.position_np += self.speed * self.direction_np
-        self.animation_moving()
-
     def animation_moving(self):
         if self.animation['count'] < 11 - self.speed:
             self.animation['count'] += 1
@@ -82,6 +78,17 @@ class Persons:
             else:
                 self.animation['view'] = 0
             self.animation['count'] = 0
+
+    def take_step(self):
+        self.position_np += self.speed * self.direction_np
+        self.animation_moving()
+
+    def motions(self):
+        if self.check_ability_to_move():
+            self.take_step()
+            return True
+        else:
+            return False
 
     def __delete__(self, instance):
         pass
@@ -118,9 +125,7 @@ class Player(Persons):
             pygame.K_LEFT - 273 - LEFT
             """
             self.direction_np = dir_base_to_vec(event.key - 273)
-
-            if self.check_ability_to_move():
-                self.take_step()
+            Persons.motions(self)
 
         if event.type == pygame.KEYUP \
                 and event.key in [pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT, pygame.K_UP]:
@@ -143,13 +148,11 @@ class Enemy(Persons):
         Persons.__init__(self, image_path, image_size, speed, start_position, game_zone, name)
         self.damage = damage
 
-    """ by default enemies goes from edge to ege, and spin randomly"""
+    """ by default enemies goes from edge to edge, and spin randomly"""
     def motions(self):
         if random.randint(0, 100) == 5:
             self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
-        if self.check_ability_to_move() is True:
-            self.take_step()
-        else:
+        if Persons.motions(self) is False:
             self.direction_np = -1*self.direction_np
 
     """загатовка для атаки, каждую секунду уменьшае хп на велечинну урона для объекта"""

@@ -14,7 +14,7 @@ class Main:
         for i in range(1):
             self.enemies.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
         # Добавил зомбарей)
-        for i in range(50):
+        for i in range(1):
             self.enemies.append(Zombie(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(400, 700)]))
 
         self.main_loop()
