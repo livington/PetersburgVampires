@@ -32,7 +32,7 @@ class Persons:
         """test NumPy"""
         self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
         self.position_np = np.array([start_position[X], start_position[Y]])
-        # adding persons images: images[НАПРАВЛЕНИЕ][ВИД АНИМАЦИИ]
+        """adding persons images: images[НАПРАВЛЕНИЕ][ВИД АНИМАЦИИ]"""
         temp = pygame.image.load(image_path).convert_alpha()
         for i in range(len([RIGHT, DOWN, LEFT, UP])):
             self.images.append([temp.subsurface(self.image_size[X]*j, self.image_size[Y]*i, self.image_size[X],
@@ -70,7 +70,7 @@ class Persons:
                 return False
 
     def animation_moving(self):
-        if self.animation['count'] < 11 - self.speed:
+        if self.animation['count'] < 7 - self.speed:
             self.animation['count'] += 1
         else:
             if self.animation['view'] < 2:
@@ -111,7 +111,10 @@ class Player(Persons):
 
     # The keyboard processing
     def motions(self, event):
-        if event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN and event.key in [pygame.K_UP,
+                                                          pygame.K_DOWN,
+                                                          pygame.K_RIGHT,
+                                                          pygame.K_LEFT]:
             self.state = MOVE
             """
             pygame.K_UP = 273
@@ -138,7 +141,7 @@ class Enemy is basic class for all enemies, пока просто переопр
 
 
 class Enemy(Persons):
-    def __init__(self, damage=10,
+    def __init__(self, damage=0.05,
                  image_path=BAT_PNG_PATH,
                  image_size=VAMPIRE_SIZE,
                  speed=VAMPIRE_SPEED,
@@ -157,9 +160,9 @@ class Enemy(Persons):
 
     """загатовка для атаки, каждую секунду уменьшае хп на велечинну урона для объекта"""
     def punch(self, player):
-        if time.time() % 1 <= 0.01:
-            player.HP -= self.damage
-            print(player.HP)
+        # if time.time() % 1 <= 0.01:
+        player.HP -= self.damage
+        print(player.HP)
 
 
 class Bat(Enemy):
@@ -175,7 +178,7 @@ class Bat(Enemy):
 
 class Zombie(Enemy):
     def __init__(self, catch=150,
-                 damage=1,
+                 damage=0.5,
                  image_path=ZOMBIE_PNG_PATH,
                  image_size=ZOMBIE_SIZE,
                  speed=ZOMBIE_SPEED,
@@ -185,10 +188,11 @@ class Zombie(Enemy):
         Enemy.__init__(self, damage, image_path, image_size, speed, start_position, game_zone, name)
         self.state = MOVE
         self.catch = catch
-        self.damage_zone = self.catch/10
+        self.damage_zone = self.catch/5
 
     """test example for Zombies motions"""
     def motions(self, player):
+
         vec_distance = player.position_np - (self.position_np - 5)
         vec_enemy_view = np.dot(vec_distance, self.direction_np)
 

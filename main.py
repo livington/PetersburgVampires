@@ -14,6 +14,9 @@ class Main:
 
         # self.add_enemies()
         # self.main_loop()
+        pygame.init()
+        pygame.font.init()
+        self.font = pygame.font.Font('C:\Windows\Fonts\Arial.TTF', 50)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -38,10 +41,12 @@ class Main:
         if self.state == FIRST_ENTER:
             self.screen.blit(pygame.image.load(START_BUTTON_PATH), (SCREEN_WIDTH / 5, SCREEN_HEIGHT / 8))
         elif self.state == GAME:
-            self.screen.blit(self.background, (0, 0))
             for enemy in self.enemies:
                 enemy.render(self.screen)
             self.player.render(self.screen)
+
+            text = self.font.render("HP: " + str(self.player.HP), True, (255, 0, 0))
+            self.screen.blit(text, (0, 10))
         elif self.state == END:
             self.screen.blit(pygame.image.load(END_BUTTON_PATH), (SCREEN_WIDTH / 5, SCREEN_HEIGHT / 8))
 
@@ -52,8 +57,10 @@ class Main:
         for i in range(10):
             self.enemies.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
         # Добавил зомбарей)
-        for i in range(100):
-            self.enemies.append(Zombie(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(400, 700)]))
+        zombies_amount = 80
+        for i in range(zombies_amount):
+            self.enemies.append(Zombie(start_position=[SCREEN_WIDTH*int(i > zombies_amount / 2),
+                                                       random.randint(400, 700)]))
 
     def check_player_hp(self):
         if self.player.HP <= 0:
@@ -61,28 +68,34 @@ class Main:
 
     def main_loop(self):
         # Основной цикл программы
-        while self.running is True:
-            # self.player.motions()
-            # self.check_player_hp()
-            self.render()
-            self.handle_events()
+        old_k_delay, old_k_interval = pygame.key.get_repeat()
+        pygame.key.set_repeat(50, 50)
+        # self.font = pygame.font.Font(None, 25)
+        try:
+            while self.running is True:
+                # self.player.motions()
+                # self.check_player_hp()
+                self.render()
+                self.handle_events()
 
-            if self.state == GAME:
-                if old_state in [FIRST_ENTER, END]:
-                    self.player.HP = MAX_HP
-                    self.add_enemies()
-                for enemy in self.enemies:
-                    if enemy.name == "Zombie":
-                        enemy.motions(self.player)
-                    else:
-                        enemy.motions()
-                self.check_player_hp()
-            elif self.state == END:
-                self.enemies = []
+                if self.state == GAME:
+                    if old_state in [FIRST_ENTER, END]:
+                        self.player.HP = MAX_HP
+                        self.add_enemies()
+                    for enemy in self.enemies:
+                        if enemy.name == "Zombie":
+                            enemy.motions(self.player)
+                        else:
+                            enemy.motions()
+                    self.check_player_hp()
+                elif self.state == END:
+                    self.enemies = []
 
-            old_state = self.state
+                old_state = self.state
+        finally:
+            pygame.key.set_repeat(old_k_delay, old_k_interval)
+            pygame.quit()
 
-
-pygame.init()
-game = Main()
-game.main_loop()
+if __name__ == '__main__':
+    game = Main()
+    game.main_loop()
