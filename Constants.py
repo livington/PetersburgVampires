@@ -24,6 +24,11 @@ DEAD = 1
 MOVE = 3
 STOP = -1
 
+"""base game state constants"""
+FIRST_ENTER = 0
+GAME = 1
+PAUSE = 2
+END = 3
 
 X = 0
 Y = 1
@@ -50,6 +55,8 @@ PLAYER_PNG_PATH = "data/player.png"
 BAT_PNG_PATH = "data/vampire2.png"
 ZOMBIE_PNG_PATH = "data/zombie3.png"
 BACK_GROUND_PATH = 'data/background.jpg'
+START_BUTTON_PATH = 'data/start.png'
+END_BUTTON_PATH = 'data/end.png'
 
 GAME_ZONE_DEFAULT = [[0, SCREEN_WIDTH], [SCREEN_HEIGHT/3 + 60, SCREEN_HEIGHT]]
 VAMPIRE_ZONE = [[0, SCREEN_WIDTH], [0, SCREEN_HEIGHT/4]]

@@ -187,12 +187,12 @@ class Zombie(Enemy):
         self.catch = catch
         self.damage_zone = self.catch/10
 
-    # test example for Zombies motions
+    """test example for Zombies motions"""
     def motions(self, player):
         vec_distance = player.position_np - (self.position_np - 5)
         vec_enemy_view = np.dot(vec_distance, self.direction_np)
 
-        # if Zombie see Player it will be move and won't change his direction
+        """if Zombie see Player it will be move and won't change his direction"""
         if vec_enemy_view > 0 and norm(vec_distance, 2) <= self.catch:
             self.take_step()
         # If zombie doesn't see Player it will turn to player
