@@ -44,3 +44,13 @@ def dir_base_to_vec(direction):
         return LEFT_np
     else:
         return False
+
+
+def get_visible_obj(main, sub):
+    limit = [[main.position_np[X] - 200, main.position_np[X] + 200],
+             [main.position_np[Y] - 200, main.position_np[Y] + 200]]
+
+    if limit[X][MIN] < sub.position_np[X] < limit[X][MAX] and limit[Y][MIN] < sub.position_np[Y] < limit[Y][MAX]:
+        main.visible_objects = sub
+    else:
+        main.visible_objects = None

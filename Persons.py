@@ -2,6 +2,7 @@
 from lib import *
 import numpy as np
 from numpy.linalg import norm
+from collections import deque
 
 """
 class Persons общий класс для всех персонажей, последующие классы наследуются от него, имеет общие атрибуты
@@ -32,6 +33,9 @@ class Persons:
         """test NumPy"""
         self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
         self.position_np = np.array([start_position[X], start_position[Y]])
+        """test view zone"""
+        self.visible_objects = None
+        self.input_msg = deque()
         """adding persons images: images[НАПРАВЛЕНИЕ][ВИД АНИМАЦИИ]"""
         temp = pygame.image.load(image_path).convert_alpha()
         for i in range(len([RIGHT, DOWN, LEFT, UP])):
@@ -45,6 +49,34 @@ class Persons:
 
     def render_ui(self, screen):
         pass
+
+    """Test check visible obj or not"""
+    def check_obj(self, obj):
+
+        # vec_distance = obj.position_np - self.position_np
+        # vec_enemy_view = np.dot(vec_distance, self.direction_np)
+        #
+        limit = [[self.position_np[X] - 200, self.position_np[X] + 200],
+                 [self.position_np[Y] - 200, self.position_np[Y] + 200]]
+
+        if obj.name not in self.visible_objects:
+            if limit[X][MIN] < obj.position_np[X] < limit[X][MAX]:
+                if limit[Y][MIN] < obj.position_np[Y] < limit[Y][MAX]:
+                    # self.visible_objects.append(obj.name)
+                    pass
+        else:
+            if (limit[X][MIN] < obj.position_np[X] < limit[X][MAX]) or (limit[Y][MIN] < obj.position_np[Y] < limit[Y][MAX]) is False:
+                # self.visible_objects.remove(obj.name)
+                pass
+
+    def get_visible_obj(self, sub):
+        limit = [[self.position_np[X] - 200, self.position_np[X] + 200],
+                 [self.position_np[Y] - 200, self.position_np[Y] + 200]]
+
+        if limit[X][MIN] < sub.position_np[X] < limit[X][MAX] and limit[Y][MIN] < sub.position_np[Y] < limit[Y][MAX]:
+            self.visible_objects = sub
+        else:
+            self.visible_objects = None
 
     """check motion ability"""
     def check_ability_to_move(self):
@@ -90,7 +122,7 @@ class Persons:
         else:
             return False
 
-    def __delete__(self, instance):
+    def reaction(self):
         pass
 
 """
@@ -108,10 +140,10 @@ class Player(Persons):
                  game_zone=GAME_ZONE_DEFAULT,
                  name="Player"):
         Persons.__init__(self, image_path, image_size, speed, start_position, game_zone, name)
+        self.event = pygame.event
 
-    # The keyboard processing
-    def motions(self, event):
-        if event.type == pygame.KEYDOWN and event.key in [pygame.K_UP,
+    def motions(self):
+        if self.event.type == pygame.KEYDOWN and self.event.key in [pygame.K_UP,
                                                           pygame.K_DOWN,
                                                           pygame.K_RIGHT,
                                                           pygame.K_LEFT]:
@@ -127,20 +159,20 @@ class Player(Persons):
             pygame.K_RIGHT - 273 = RIGHT
             pygame.K_LEFT - 273 - LEFT
             """
-            self.direction_np = dir_base_to_vec(event.key - 273)
+            self.direction_np = dir_base_to_vec(self.event.key - 273)
             Persons.motions(self)
 
-        if event.type == pygame.KEYUP \
-                and event.key in [pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT, pygame.K_UP]:
+        if self.event.type == pygame.KEYUP \
+                and self.event.key in [pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT, pygame.K_UP]:
                 self.state = STOP
-
-"""
-class Enemy is basic class for all enemies, пока просто переопределил инициализацию,
-и установил дефолтные значения для изображения
-"""
 
 
 class Enemy(Persons):
+    """
+    class Enemy is basic class for all enemies, пока просто переопределил инициализацию,
+    и установил дефолтные значения для изображения
+    """
+
     def __init__(self, damage=0.05,
                  image_path=BAT_PNG_PATH,
                  image_size=VAMPIRE_SIZE,
@@ -151,16 +183,17 @@ class Enemy(Persons):
         Persons.__init__(self, image_path, image_size, speed, start_position, game_zone, name)
         self.damage = damage
 
-    """ by default enemies goes from edge to edge, and spin randomly"""
     def motions(self):
+        """ by default enemies goes from edge to edge, and spin randomly"""
+
         if random.randint(0, 100) == 5:
             self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
         if Persons.motions(self) is False:
             self.direction_np = -1*self.direction_np
 
-    """загатовка для атаки, каждую секунду уменьшае хп на велечинну урона для объекта"""
     def punch(self, player):
-        # if time.time() % 1 <= 0.01:
+        """загатовка для атаки, каждую секунду уменьшае хп на велечинну урона для объекта"""
+
         player.HP -= self.damage
         print(player.HP)
 
@@ -190,27 +223,41 @@ class Zombie(Enemy):
         self.catch = catch
         self.damage_zone = self.catch/5
 
-    """test example for Zombies motions"""
-    def motions(self, player):
+    def motions(self):
+        """test example for Zombies motions"""
 
-        vec_distance = player.position_np - (self.position_np - 5)
-        vec_enemy_view = np.dot(vec_distance, self.direction_np)
-
-        """if Zombie see Player it will be move and won't change his direction"""
-        if vec_enemy_view > 0 and norm(vec_distance, 2) <= self.catch:
-            self.take_step()
-        # If zombie doesn't see Player it will turn to player
-        elif self.damage_zone < norm(vec_distance, 2) <= self.catch:
-            # a trying to turn right
-            temp = np.dot(self.direction_np.T, MTX_TURN_RIGHT)
-            if np.dot(temp, player.position_np - self.position_np) > 0:
-                # if it ok we will save temp to enemy's direction
-                self.direction_np = temp
-            else:
-                # either turn to left
-                self.direction_np = -1*temp
-        # if player are in damage zone Zombie will attack it
-        elif norm(vec_distance, 2) < self.damage_zone:
-            self.punch(player)
-        else:
+        if self.state is not CATCH:
             Enemy.motions(self)
+
+    def reaction(self):
+        """Get a reaction depending of a type of visible object"""
+
+        if type(self.visible_objects) is Player:
+            vec_distance = self.visible_objects.position_np - (self.position_np - 5)
+            vec_enemy_view = np.dot(vec_distance, self.direction_np)
+            """if Zombie see Player it will be move and won't change his direction"""
+            if vec_enemy_view > 0 and norm(vec_distance, 2) <= self.catch:
+                self.state = CATCH
+            # If zombie doesn't see Player it will turn to player
+            elif self.damage_zone < norm(vec_distance, 2) <= self.catch:  # a trying to turn right
+                temp = np.dot(self.direction_np.T, MTX_TURN_RIGHT)
+                if np.dot(temp, self.visible_objects.position_np - self.position_np) > 0:
+                    # if it ok we will save temp to enemy's direction
+                    self.direction_np = temp
+                else:
+                    self.direction_np = -1 * temp  # either turn to left
+            # if player are in damage zone Zombie will attack him
+            elif norm(vec_distance, 2) < self.damage_zone:
+                self.punch(self.visible_objects)
+            # pass
+        elif type(self.visible_objects) is Zombie and self.state is not CATCH:
+            vec_distance = self.visible_objects.position_np - self.position_np
+            vec_enemy_view = np.dot(vec_distance, self.direction_np)
+            """if Zombie see Player it will be move and won't change his direction"""
+            if vec_enemy_view > 0 and norm(vec_distance, 2) <= 5:
+                self.direction_np = -1 * self.direction_np
+                self.visible_objects.direction_np = -1 * self.visible_objects.direction_np
+            self.state = MOVE
+        else:
+            self.state = MOVE
+
