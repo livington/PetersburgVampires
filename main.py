@@ -60,12 +60,31 @@ class Main:
     def add_enemies(self):
         """add all enemies"""
 
-        for i in range(1):
-            self.all_objects.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
+        # for i in range(1):
+        #     self.all_objects.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
         """adding zombies, half to left side and half to other"""
         for i in range(ZOMBIES_AMOUNT):
-            self.all_objects.append(Zombie(name="zombie " + str(i), start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
-                                                       random.randint(400, 700)]))
+            self.all_objects.append(Zombie(name="zombie " + str(i),
+                                           start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
+                                           random.randint(400, 700)]))
+
+        """add 2 zombies to test a change direction algorithm"""
+        zombie_left = Zombie(name="zombie1 ", start_position=[400, SCREEN_HEIGHT / 2])
+        zombie_left.direction_np = RIGHT_np
+        self.all_objects.append(zombie_left)
+
+        zombie_right = Zombie(name="zombie1 ", start_position=[SCREEN_WIDTH-400, SCREEN_HEIGHT / 2])
+        zombie_right.direction_np = LEFT_np
+        self.all_objects.append(zombie_right)
+
+        zombie_up = Zombie(name="zombie1 ", start_position=[SCREEN_WIDTH/2, SCREEN_HEIGHT/2])
+        zombie_up.direction_np = DOWN_np
+        self.all_objects.append(zombie_up)
+
+        zombie_down = Zombie(name="zombie1 ", start_position=[SCREEN_WIDTH/2, SCREEN_HEIGHT])
+        zombie_down.direction_np = UP_np
+        self.all_objects.append(zombie_down)
+
         # self.all_objects.extend(self.enemies)
 
     """check all objects"""
@@ -95,12 +114,57 @@ class Main:
                         self.player.HP = MAX_HP
                         self.all_objects.append(self.player)
                         self.add_enemies()
-                    for main_obj in self.all_objects:
-                        for sub_obj in self.all_objects:
-                            if main_obj is not sub_obj:
-                                main_obj.get_visible_obj(sub_obj)
-                                main_obj.reaction()
-                        main_obj.motions()
+
+                    """push grid"""
+                    grid = {}
+                    for obj in self.all_objects:
+                        x = int(obj.position_np[X]/ZOMBIE_SIZE[X]*2)
+                        y = int(obj.position_np[Y]/ZOMBIE_SIZE[X]*2)
+
+                        grid[x*y] = obj
+
+                    """check position in grid"""
+                    for obj in self.all_objects:
+                        x = int(obj.position_np[X] / ZOMBIE_SIZE[X] * 2)
+                        y = int(obj.position_np[Y] / ZOMBIE_SIZE[X] * 2)
+
+                        # for i in range(-1, 2):
+                        #     for j in range(-1, 2):
+                        #         if grid.get((x + i) * (y + j)) is not None:
+                        #             obj.visible_objects = grid.get((x + i) * (y + j))
+                        #             obj.reaction()
+
+                        if np.dot(obj.direction_np, UP_np) == 0 or np.dot(obj.direction_np, DOWN_np):
+                            radx = [-5, 4]
+                            if np.dot(obj.direction_np, UP_np) == 0:
+                                rady = [0, 4]
+                            else:
+                                rady = [-5, 0]
+                        else:
+                            rady = [-5, 4]
+                            if np.dot(obj.direction_np, RIGHT_np):
+                                radx = [0, 4]
+                            else:
+                                radx = [-5, 0]
+
+                        for i in range(radx[MIN], radx[MAX]):
+                            for j in range(rady[MIN], rady[MAX]):
+                                if grid.get((x + i) * (y + j)) is not None:
+                                    obj.visible_objects = grid.get((x + i) * (y + j))
+                                    obj.reaction()
+
+                        obj.motions()
+
+                    # self.all_objects.sort(key=by_position_x_get_key)
+                    # for main_obj in self.all_objects:
+                    #     for sub_obj in self.all_objects:
+                    #         if main_obj is not sub_obj and \
+                    #                                 main_obj.position_np[X] + 5 > sub_obj.position_np[X] - 5:
+                    #             # main_obj.get_visible_obj(sub_obj)
+                    #             main_obj.visible_objects = sub_obj
+                    #             main_obj.reaction()
+                    #     main_obj.motions()
+
                     self.check_player_hp()
                     pygame.display.flip()
                 elif self.state == END:

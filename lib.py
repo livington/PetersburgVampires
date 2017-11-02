@@ -54,3 +54,7 @@ def get_visible_obj(main, sub):
         main.visible_objects = sub
     else:
         main.visible_objects = None
+
+
+def by_position_x_get_key(obj):
+    return obj.position_np[X]

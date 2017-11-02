@@ -24,15 +24,14 @@ class Persons:
         self.MP = MAX_MP
         self.state = ALIVE
         self.speed = speed
-        # self.direction = random.choice([LEFT, RIGHT, UP, DOWN])
-        # self.position = start_position
         self.game_zone = game_zone
         self.images = []
         self.animation = {'view': 0, 'count': 0}
         self.image_size = image_size
         """test NumPy"""
         self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
-        self.position_np = np.array([start_position[X], start_position[Y]])
+        self.position_np = np.array([start_position[X] + image_size[X] / 2,
+                                     start_position[Y] + image_size[Y] / 2])
         """test view zone"""
         self.visible_objects = None
         self.input_msg = deque()
@@ -173,7 +172,8 @@ class Enemy(Persons):
     и установил дефолтные значения для изображения
     """
 
-    def __init__(self, damage=0.05,
+    def __init__(self,
+                 damage=0.05,
                  image_path=BAT_PNG_PATH,
                  image_size=VAMPIRE_SIZE,
                  speed=VAMPIRE_SPEED,
@@ -230,31 +230,32 @@ class Zombie(Enemy):
             Enemy.motions(self)
 
     def reaction(self):
-        """Get a reaction depending of a type of visible object"""
+        """Get a depending reaction of a type of visible object"""
 
         if type(self.visible_objects) is Player:
-            vec_distance = self.visible_objects.position_np - (self.position_np - 5)
-            vec_enemy_view = np.dot(vec_distance, self.direction_np)
-            """if Zombie see Player it will be move and won't change his direction"""
-            if vec_enemy_view > 0 and norm(vec_distance, 2) <= self.catch:
-                self.state = CATCH
-            # If zombie doesn't see Player it will turn to player
-            elif self.damage_zone < norm(vec_distance, 2) <= self.catch:  # a trying to turn right
-                temp = np.dot(self.direction_np.T, MTX_TURN_RIGHT)
-                if np.dot(temp, self.visible_objects.position_np - self.position_np) > 0:
-                    # if it ok we will save temp to enemy's direction
-                    self.direction_np = temp
-                else:
-                    self.direction_np = -1 * temp  # either turn to left
-            # if player are in damage zone Zombie will attack him
-            elif norm(vec_distance, 2) < self.damage_zone:
-                self.punch(self.visible_objects)
-            # pass
+            # vec_distance = self.visible_objects.position_np - (self.position_np - 5)
+            # vec_enemy_view = np.dot(vec_distance, self.direction_np)
+            # """if Zombie see Player it will be move and won't change his direction"""
+            # if vec_enemy_view > 0 and norm(vec_distance, 2) <= self.catch:
+            #     self.state = CATCH
+            # # If zombie doesn't see Player it will turn to player
+            # elif self.damage_zone < norm(vec_distance, 2) <= self.catch:  # a trying to turn right
+            #     temp = np.dot(self.direction_np.T, MTX_TURN_RIGHT)
+            #     if np.dot(temp, self.visible_objects.position_np - self.position_np) > 0:
+            #         # if it ok we will save temp to enemy's direction
+            #         self.direction_np = temp
+            #     else:
+            #         self.direction_np = -1 * temp  # either turn to left
+            # # if player are in damage zone Zombie will attack him
+            # if norm(vec_distance, 2) < self.damage_zone:
+            #     self.punch(self.visible_objects)
+            #     self.state = CATCH
+            pass
         elif type(self.visible_objects) is Zombie and self.state is not CATCH:
             vec_distance = self.visible_objects.position_np - self.position_np
             vec_enemy_view = np.dot(vec_distance, self.direction_np)
             """if Zombie see Player it will be move and won't change his direction"""
-            if vec_enemy_view > 0 and norm(vec_distance, 2) <= 5:
+            if vec_enemy_view > 0 and norm(vec_distance, 2) <= 15:
                 self.direction_np = -1 * self.direction_np
                 self.visible_objects.direction_np = -1 * self.visible_objects.direction_np
             self.state = MOVE
