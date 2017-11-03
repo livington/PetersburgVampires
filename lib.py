@@ -5,6 +5,10 @@ import numpy as np
 import pygame
 import time
 import random
+import cython as C
+from numba import jit
+from numba import cuda
+from numpy.linalg import norm
 
 from Constants import *
 
@@ -58,3 +62,23 @@ def get_visible_obj(main, sub):
 
 def by_position_x_get_key(obj):
     return obj.position_np[X]
+
+
+@jit(nopython=True)
+def get_grid_xy(position_np, obj_size):
+    x = int(position_np[X] / obj_size[X] * 2)
+    y = int(position_np[Y] / obj_size[Y] * 2)
+
+    return x, y
+
+
+def get_distance(vec_distance):
+    return norm(vec_distance, 2)
+
+
+def get_vec_view_and_distance(first_position_np, second_position_np, direction_np):
+    vec_distance = second_position_np - first_position_np
+    vec_enemy_view = np.dot(vec_distance, direction_np)
+    distance = get_distance(vec_distance)
+
+    return vec_distance, vec_enemy_view, distance

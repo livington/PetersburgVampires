@@ -4,13 +4,12 @@ import numpy as np
 from numpy.linalg import norm
 from collections import deque
 
-"""
-class Persons общий класс для всех персонажей, последующие классы наследуются от него, имеет общие атрибуты
-характерные для каждого класса
-"""
-
 
 class Persons:
+    """
+    class Persons общий класс для всех персонажей, последующие классы наследуются от него, имеет общие атрибуты
+    характерные для каждого класса
+    """
 
     def __init__(self, image_path,
                  image_size,
@@ -34,7 +33,7 @@ class Persons:
                                      start_position[Y] + image_size[Y] / 2])
         """test view zone"""
         self.visible_objects = None
-        self.input_msg = deque()
+        self.visible_distance = 0
         """adding persons images: images[НАПРАВЛЕНИЕ][ВИД АНИМАЦИИ]"""
         temp = pygame.image.load(image_path).convert_alpha()
         for i in range(len([RIGHT, DOWN, LEFT, UP])):
@@ -49,36 +48,9 @@ class Persons:
     def render_ui(self, screen):
         pass
 
-    """Test check visible obj or not"""
-    def check_obj(self, obj):
-
-        # vec_distance = obj.position_np - self.position_np
-        # vec_enemy_view = np.dot(vec_distance, self.direction_np)
-        #
-        limit = [[self.position_np[X] - 200, self.position_np[X] + 200],
-                 [self.position_np[Y] - 200, self.position_np[Y] + 200]]
-
-        if obj.name not in self.visible_objects:
-            if limit[X][MIN] < obj.position_np[X] < limit[X][MAX]:
-                if limit[Y][MIN] < obj.position_np[Y] < limit[Y][MAX]:
-                    # self.visible_objects.append(obj.name)
-                    pass
-        else:
-            if (limit[X][MIN] < obj.position_np[X] < limit[X][MAX]) or (limit[Y][MIN] < obj.position_np[Y] < limit[Y][MAX]) is False:
-                # self.visible_objects.remove(obj.name)
-                pass
-
-    def get_visible_obj(self, sub):
-        limit = [[self.position_np[X] - 200, self.position_np[X] + 200],
-                 [self.position_np[Y] - 200, self.position_np[Y] + 200]]
-
-        if limit[X][MIN] < sub.position_np[X] < limit[X][MAX] and limit[Y][MIN] < sub.position_np[Y] < limit[Y][MAX]:
-            self.visible_objects = sub
-        else:
-            self.visible_objects = None
-
-    """check motion ability"""
     def check_ability_to_move(self):
+        """check motion ability"""
+
         if np.dot(self.direction_np, LEFT_np) == 1:
             if self.position_np[X] >= self.game_zone[X][MIN]:
                 return True
@@ -124,13 +96,12 @@ class Persons:
     def reaction(self):
         pass
 
-"""
-class Player наследуется от Persons, переопределяю __init__ для записи по дефолту адресса изображений главного персонажа/игрока
-а также для записи зоны движения и названия экзмепляра. Характерным отличием евляется метод motions для определения движения игрока
-"""
-
 
 class Player(Persons):
+    """
+    class Player наследуется от Persons, переопределяю __init__ для записи по дефолту адресса изображений главного персонажа/игрока
+    а также для записи зоны движения и названия экзмепляра. Характерным отличием евляется метод motions для определения движения игрока
+    """
 
     def __init__(self, image_path=PLAYER_PNG_PATH,
                  image_size=PLAYER_SIZE,
@@ -226,39 +197,55 @@ class Zombie(Enemy):
     def motions(self):
         """test example for Zombies motions"""
 
-        if self.state is not CATCH:
+        if self.state is MOVE:
             Enemy.motions(self)
+        elif self.state is CATCH:
+            Persons.motions(self)
 
     def reaction(self):
-        """Get a depending reaction of a type of visible object"""
+        """The reaction depends of the type of visible object"""
 
         if type(self.visible_objects) is Player:
-            # vec_distance = self.visible_objects.position_np - (self.position_np - 5)
-            # vec_enemy_view = np.dot(vec_distance, self.direction_np)
-            # """if Zombie see Player it will be move and won't change his direction"""
-            # if vec_enemy_view > 0 and norm(vec_distance, 2) <= self.catch:
-            #     self.state = CATCH
-            # # If zombie doesn't see Player it will turn to player
-            # elif self.damage_zone < norm(vec_distance, 2) <= self.catch:  # a trying to turn right
-            #     temp = np.dot(self.direction_np.T, MTX_TURN_RIGHT)
-            #     if np.dot(temp, self.visible_objects.position_np - self.position_np) > 0:
-            #         # if it ok we will save temp to enemy's direction
-            #         self.direction_np = temp
-            #     else:
-            #         self.direction_np = -1 * temp  # either turn to left
-            # # if player are in damage zone Zombie will attack him
-            # if norm(vec_distance, 2) < self.damage_zone:
-            #     self.punch(self.visible_objects)
-            #     self.state = CATCH
-            pass
-        elif type(self.visible_objects) is Zombie and self.state is not CATCH:
-            vec_distance = self.visible_objects.position_np - self.position_np
-            vec_enemy_view = np.dot(vec_distance, self.direction_np)
-            """if Zombie see Player it will be move and won't change his direction"""
-            if vec_enemy_view > 0 and norm(vec_distance, 2) <= 15:
-                self.direction_np = -1 * self.direction_np
-                self.visible_objects.direction_np = -1 * self.visible_objects.direction_np
+            if 0 < self.visible_distance < 3:
+                vec_distance, vec_enemy_view, distance = get_vec_view_and_distance(self.position_np,
+                                                                                   self.visible_objects.position_np,
+                                                                                   self.direction_np)
+                self.state = CATCH
+                """if Zombie see Player it will be move and won't change his direction"""
+                # if vec_enemy_view > 0.1 and distance <= self.catch:
+                #     self.state = CATCH
+                #     # If zombie doesn't see Player it will turn to player
+                # if self.damage_zone < distance <= self.catch:  # a trying to turn right
+                #     temp = np.dot(self.direction_np.T, MTX_TURN_RIGHT)
+                #     if np.dot(temp, self.visible_objects.position_np - self.position_np) > 0:
+                #         # if it's ok, enemy will get temp direction
+                #         self.direction_np = temp
+                #     else:
+                #         self.direction_np = -1 * temp  # either turn to left
+                # if player are in damage zone, Zombie will attack him
+                if distance < self.damage_zone:
+                    self.punch(self.visible_objects)
+                    self.state = STOP
+            else:
+                self.state = MOVE
+            # pass
+        elif type(self.visible_objects) is Zombie and self.state not in [CATCH, STOP]:
+            if 0 < self.visible_distance < 3:
+                vec_distance, vec_enemy_view, distance = get_vec_view_and_distance(self.position_np,
+                                                                                   self.visible_objects.position_np,
+                                                                                   self.direction_np)
+                """if Zombie see Player it will be move and won't change his direction"""
+                if vec_enemy_view > 0 and distance <= 15:
+                    self.direction_np = -1 * self.direction_np
+                    self.visible_objects.direction_np = -1 * self.visible_objects.direction_np
+                # if self.damage_zone < distance <= self.catch:  # a trying to turn right
+                #     temp = np.dot(self.direction_np.T, MTX_TURN_RIGHT)
+                #     if np.dot(temp, self.visible_objects.position_np - self.position_np) > 0:
+                #         # if it's ok, enemy will get temp direction
+                #         self.direction_np = temp
+                #     else:
+                #         self.direction_np = -1 * temp  # either turn to left
             self.state = MOVE
-        else:
+        elif self.state is not STOP:
             self.state = MOVE
 
