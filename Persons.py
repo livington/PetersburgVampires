@@ -226,9 +226,10 @@ class Zombie(Enemy):
                 if distance < self.damage_zone:
                     self.punch(self.visible_objects)
                     self.state = STOP
+
             else:
                 self.state = MOVE
-            # pass
+            #pass
         elif type(self.visible_objects) is Zombie and self.state not in [CATCH, STOP]:
             if 0 < self.visible_distance < 3:
                 vec_distance, vec_enemy_view, distance = get_vec_view_and_distance(self.position_np,

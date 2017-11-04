@@ -69,6 +69,15 @@ def get_grid_xy(position_np, obj_size):
     x = int(position_np[X] / obj_size[X] * 2)
     y = int(position_np[Y] / obj_size[Y] * 2)
 
+    if x < 0:
+        x = 0
+    if y < 0:
+        y = 0
+    if x >= GRID_WIDTH:
+        x = GRID_WIDTH - 1
+    if y >= GRID_HEIGHT:
+        y = GRID_HEIGHT - 1
+
     return x, y
 
 
@@ -82,3 +91,19 @@ def get_vec_view_and_distance(first_position_np, second_position_np, direction_n
     distance = get_distance(vec_distance)
 
     return vec_distance, vec_enemy_view, distance
+
+
+def get_grid_visible(direction_np, rad):
+    if np.dot(direction_np, UP_np) == 0 or np.dot(direction_np, DOWN_np):
+        radx = [-rad, rad - 1]
+        if np.dot(direction_np, UP_np) == 0:
+            rady = [0, rad - 1]
+        else:
+            rady = [-rad, 0]
+    else:
+        rady = [-rad, rad - 1]
+        if np.dot(direction_np, RIGHT_np):
+            radx = [0, rad - 1]
+        else:
+            radx = [-rad, 0]
+    return radx, rady

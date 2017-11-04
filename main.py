@@ -12,6 +12,8 @@ class Game:
         self.state = FIRST_ENTER
         self.all_objects = []
         self.grid = {}
+        self.cell_size = np.zeros((1, GRID_WIDTH * GRID_HEIGHT), dtype=np.int8)
+        self.grid_np = np.empty((GRID_WIDTH + 2, GRID_HEIGHT + 2), dtype=Persons)
 
         """init pygame"""
         pygame.init()
@@ -60,14 +62,14 @@ class Game:
     def add_enemies(self):
         """add all enemies"""
 
-        # for i in range(1):
-        #     self.all_objects.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
+        #for i in range(10):
+        #    self.all_objects.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
         """adding zombies, half to left side and half to other"""
         for i in range(ZOMBIES_AMOUNT):
             self.all_objects.append(Zombie(name="zombie " + str(i),
                                            start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
                                            random.randint(400, 700)]))
-
+#
         """add 2 zombies to test a change direction algorithm"""
         zombie_left = Zombie(name="zombie1 ", start_position=[400, SCREEN_HEIGHT / 2])
         zombie_left.direction_np = RIGHT_np
@@ -93,45 +95,56 @@ class Game:
         if self.player.HP <= 0:
             self.state = END
 
-    @jit()
-    def fill_grid(self):
+    def fill_grid_np(self):
         """fill game grid for all objects in the game"""
 
-        self.grid = {}
+        self.grid_np = np.empty((1, GRID_HEIGHT*GRID_HEIGHT), dtype=Persons)
+        grid = self.grid_np[0]
+        cell_size = self.cell_size[0]
         for i in np.arange(len(self.all_objects)):
             obj = self.all_objects[i]
             x, y = get_grid_xy(obj.position_np, ZOMBIE_SIZE)
-            self.grid[x * y] = obj
+            grid[y*GRID_WIDTH + x] = obj
+            if cell_size[y*GRID_WIDTH + x] < MAX_CELL_SIZE:
+                cell_size[y*GRID_WIDTH + x] += 1
 
-    def reaction_and_motion(self):
-        """loop for all objects, get reaction and motion"""
+    def grid_update_np(self):
+        grid = self.grid_np[0]
+        cell_size = self.cell_size[0]
+        for i in np.arange(GRID_WIDTH*GRID_HEIGHT):
+            for j in np.arange(cell_size[i]):
+                if grid[i * MAX_CELL_SIZE + j] is not None:
+                    x = np.int32(grid[i * MAX_CELL_SIZE + j].position_np[X] / (2.0*ZOMBIE_SIZE[X]))
+                    y = np.int32(grid[i * MAX_CELL_SIZE + j].position_np[Y] / (2.0*ZOMBIE_SIZE[Y]))
 
-        for i in np.arange(len(self.all_objects)):
-            obj = self.all_objects[i]
-            if obj is not self.player:
-                x, y = get_grid_xy(obj.position_np, ZOMBIE_SIZE)
+                    if x < 0:
+                        x = 0
+                    if y < 0:
+                        y = 0
+                    if x >= GRID_WIDTH:
+                        x = GRID_WIDTH - 1
+                    if y >= GRID_HEIGHT:
+                        y = GRID_HEIGHT - 1
 
-                rad = 3
-                if np.dot(obj.direction_np, UP_np) == 0 or np.dot(obj.direction_np, DOWN_np):
-                    radx = [-rad, rad - 1]
-                    if np.dot(obj.direction_np, UP_np) == 0:
-                        rady = [0, rad - 1]
-                    else:
-                        rady = [-rad, 0]
-                else:
-                    rady = [-rad, rad - 1]
-                    if np.dot(obj.direction_np, RIGHT_np):
-                        radx = [0, rad - 1]
-                    else:
-                        radx = [-rad, 0]
+                    if (x * GRID_HEIGHT + y) != i and cell_size[x * GRID_HEIGHT + y] < MAX_CELL_SIZE:
+                        grid[(x * GRID_HEIGHT + y) * MAX_CELL_SIZE + cell_size[x * GRID_HEIGHT + y] + 1] = \
+                        grid[i * GRID_HEIGHT + j]
+                        cell_size[x * GRID_HEIGHT + y] += 1
+                        grid[i*MAX_CELL_SIZE + j] = grid[i * MAX_CELL_SIZE + cell_size[i] - 1]
+                        cell_size[i] -= 1
 
-                for i in np.arange(radx[MIN], radx[MAX]):
-                    for j in np.arange(rady[MIN], rady[MAX]):
-                        if self.grid.get((x + i) * (y + j)) is not None:
-                            obj.visible_objects = self.grid.get((x + i) * (y + j))
-                            obj.visible_distance = abs(i) + abs(j)
-                            obj.reaction()
-            obj.motions()
+    def get_reaction(self, obj):
+        """loop for all objects, get reaction"""
+
+        x, y = get_grid_xy(obj.position_np, ZOMBIE_SIZE)
+        radx, rady = get_grid_visible(obj.direction_np, 3)
+        for i in np.arange(radx[MIN], radx[MAX]):
+            for j in np.arange(rady[MIN], rady[MAX]):
+                get_obj = self.grid_np[0][(y + j)*GRID_WIDTH + (x + i)]
+                if get_obj is not None:
+                    obj.visible_objects = get_obj
+                    obj.visible_distance = abs(i) + abs(j)
+                    obj.reaction()
 
     def main(self):
         """main program loop"""
@@ -148,11 +161,14 @@ class Game:
                         self.player.HP = MAX_HP
                         self.all_objects.append(self.player)
                         self.add_enemies()
-
                     """push grid"""
-                    self.fill_grid()
+                    self.fill_grid_np()
                     """check position in grid"""
-                    self.reaction_and_motion()
+                    for i in np.arange(len(self.all_objects)):
+                        obj = self.all_objects[i]
+                        if obj is not self.player:
+                            self.get_reaction(obj)
+                        obj.motions()
                     self.check_player_hp()
                 elif self.state == END:
                     self.all_objects = []
