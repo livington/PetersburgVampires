@@ -11,7 +11,6 @@ class Game:
         self.running = True
         self.state = FIRST_ENTER
         self.all_objects = []
-        self.grid = {}
         self.cell_size = np.zeros((1, GRID_WIDTH * GRID_HEIGHT), dtype=np.int8)
         self.grid_np = np.empty((GRID_WIDTH + 2, GRID_HEIGHT + 2), dtype=Persons)
 
@@ -65,10 +64,10 @@ class Game:
         #for i in range(10):
         #    self.all_objects.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
         """adding zombies, half to left side and half to other"""
-        for i in range(ZOMBIES_AMOUNT):
-            self.all_objects.append(Zombie(name="zombie " + str(i),
-                                           start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
-                                           random.randint(400, 700)]))
+        #for i in range(ZOMBIES_AMOUNT):
+        #    self.all_objects.append(Zombie(name="zombie " + str(i),
+        #                                   start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
+        #                                   random.randint(400, 700)]))
 #
         """add 2 zombies to test a change direction algorithm"""
         zombie_left = Zombie(name="zombie1 ", start_position=[400, SCREEN_HEIGHT / 2])

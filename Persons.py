@@ -157,8 +157,8 @@ class Enemy(Persons):
     def motions(self):
         """ by default enemies goes from edge to edge, and spin randomly"""
 
-        if random.randint(0, 100) == 5:
-            self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
+        #if random.randint(0, 100) == 5:
+        #    self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
         if Persons.motions(self) is False:
             self.direction_np = -1*self.direction_np
 
