@@ -1,11 +1,14 @@
 # -"- coding: utf-8 -"-
 from lib import *
 import numpy as np
+import pygame
+from Objects import MovingObjects
+
 from numpy.linalg import norm
 from collections import deque
 
 
-class Persons:
+class Persons(MovingObjects):
     """
     class Persons общий класс для всех персонажей, последующие классы наследуются от него, имеет общие атрибуты
     характерные для каждого класса
@@ -17,84 +20,10 @@ class Persons:
                  start_position=[START_X, START_Y],
                  game_zone=GAME_ZONE_DEFAULT,
                  name="Person"):
+        MovingObjects.__init__(self, image_path, image_size, speed, start_position, game_zone, name)
 
-        self.name = name
         self.HP = MAX_HP
         self.MP = MAX_MP
-        self.state = ALIVE
-        self.speed = speed
-        self.game_zone = game_zone
-        self.images = []
-        self.animation = {'view': 0, 'count': 0}
-        self.image_size = image_size
-        """test NumPy"""
-        self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
-        self.position_np = np.array([start_position[X] + image_size[X] / 2,
-                                     start_position[Y] + image_size[Y] / 2])
-        """test view zone"""
-        self.visible_objects = None
-        self.visible_distance = 0
-        """adding persons images: images[НАПРАВЛЕНИЕ][ВИД АНИМАЦИИ]"""
-        temp = pygame.image.load(image_path).convert_alpha()
-        for i in range(len([RIGHT, DOWN, LEFT, UP])):
-            self.images.append([temp.subsurface(self.image_size[X]*j, self.image_size[Y]*i, self.image_size[X],
-                                                self.image_size[Y])
-                                for j in range(len([RIGHT, DOWN, LEFT, UP]))])
-
-    def render(self, screen):
-        screen.blit(self.images[dir_vec_to_base(self.direction_np)][self.animation['view']], (self.position_np[X],
-                                                                                              self.position_np[Y]))
-
-    def render_ui(self, screen):
-        pass
-
-    def check_ability_to_move(self):
-        """check motion ability"""
-
-        if np.dot(self.direction_np, LEFT_np) == 1:
-            if self.position_np[X] >= self.game_zone[X][MIN]:
-                return True
-            else:
-                return False
-        elif np.dot(self.direction_np, RIGHT_np) == 1:
-            if self.position_np[X] <= self.game_zone[X][MAX]:
-                return True
-            else:
-                return False
-        elif np.dot(self.direction_np, DOWN_np) == 1:
-            if self.position_np[Y] <= self.game_zone[Y][MAX]:
-                return True
-            else:
-                return False
-        elif np.dot(self.direction_np, UP_np) == 1:
-            if self.position_np[Y] >= self.game_zone[Y][MIN]:
-                return True
-            else:
-                return False
-
-    def animation_moving(self):
-        if self.animation['count'] < 7 - self.speed:
-            self.animation['count'] += 1
-        else:
-            if self.animation['view'] < 2:
-                self.animation['view'] += 1
-            else:
-                self.animation['view'] = 0
-            self.animation['count'] = 0
-
-    def take_step(self):
-        self.position_np += self.speed * self.direction_np
-        self.animation_moving()
-
-    def motions(self):
-        if self.check_ability_to_move():
-            self.take_step()
-            return True
-        else:
-            return False
-
-    def reaction(self):
-        pass
 
 
 class Player(Persons):
@@ -111,12 +40,13 @@ class Player(Persons):
                  name="Player"):
         Persons.__init__(self, image_path, image_size, speed, start_position, game_zone, name)
         self.event = pygame.event
+        self.attack = False
 
     def motions(self):
         if self.event.type == pygame.KEYDOWN and self.event.key in [pygame.K_UP,
-                                                          pygame.K_DOWN,
-                                                          pygame.K_RIGHT,
-                                                          pygame.K_LEFT]:
+                                                                    pygame.K_DOWN,
+                                                                    pygame.K_RIGHT,
+                                                                    pygame.K_LEFT]:
             self.state = MOVE
             """
             pygame.K_UP = 273
@@ -135,6 +65,9 @@ class Player(Persons):
         if self.event.type == pygame.KEYUP \
                 and self.event.key in [pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT, pygame.K_UP]:
                 self.state = STOP
+
+        if self.event.type == pygame.KEYDOWN and self.event.key == pygame.K_SPACE:
+            self.attack = True
 
 
 class Enemy(Persons):
@@ -157,8 +90,8 @@ class Enemy(Persons):
     def motions(self):
         """ by default enemies goes from edge to edge, and spin randomly"""
 
-        #if random.randint(0, 100) == 5:
-        #    self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
+        # if random.randint(0, 100) == 5:
+        #     self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
         if Persons.motions(self) is False:
             self.direction_np = -1*self.direction_np
 
@@ -197,10 +130,13 @@ class Zombie(Enemy):
     def motions(self):
         """test example for Zombies motions"""
 
-        if self.state is MOVE:
-            Enemy.motions(self)
-        elif self.state is CATCH:
-            Persons.motions(self)
+        if self.HP > 0:
+            if self.state is MOVE:
+                Enemy.motions(self)
+            elif self.state is CATCH:
+                Persons.motions(self)
+        else:
+            self.state = DEAD
 
     def reaction(self):
         """The reaction depends of the type of visible object"""
@@ -250,3 +186,38 @@ class Zombie(Enemy):
         elif self.state is not STOP:
             self.state = MOVE
 
+
+class FireBall(MovingObjects):
+    def __init__(self,
+                 image_path=FIREBALL_PNG_PATH,
+                 image_size=[64, 64],
+                 speed=PLAYER_SPEED*2,
+                 start_position=[START_X, START_Y],
+                 game_zone=GAME_SCREEN,
+                 name="MovingObjects",
+                 direction=UP_np):
+        MovingObjects.__init__(self, image_path, image_size, speed, start_position, game_zone, name, direction)
+        self.damage = 100
+
+    def motions(self):
+        if MovingObjects.motions(self) is False:
+            self.state = DEAD
+
+    def punch(self, obj):
+        """загатовка для атаки, каждую секунду уменьшае хп на велечинну урона для объекта"""
+
+        obj.HP -= self.damage
+        print(obj.HP)
+
+    def reaction(self):
+        """The reaction depends of the type of visible object"""
+
+        if type(self.visible_objects) is Zombie:
+            if 0 < self.visible_distance < 3:
+                vec_distance, vec_enemy_view, distance = get_vec_view_and_distance(self.position_np,
+                                                                                   self.visible_objects.position_np,
+                                                                                   self.direction_np)
+                """if Zombie see Player it will be move and won't change his direction"""
+                if vec_enemy_view > 0 and distance <= 15:
+                    self.punch(self.visible_objects)
+                    self.state = DEAD

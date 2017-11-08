@@ -1,13 +1,9 @@
 """
 Файл для своих локальных общих функций
 """
-import numpy as np
-import pygame
 import time
 import random
-import cython as C
 from numba import jit
-from numba import cuda
 from numpy.linalg import norm
 
 from Constants import *
@@ -81,6 +77,7 @@ def get_grid_xy(position_np, obj_size):
     return x, y
 
 
+@jit()
 def get_distance(vec_distance):
     return norm(vec_distance, 2)
 

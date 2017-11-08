@@ -2,6 +2,7 @@
 from Persons import *
 import sys
 
+
 class Game:
     def __init__(self, screen=pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))):
         self.screen = screen
@@ -64,11 +65,11 @@ class Game:
         #for i in range(10):
         #    self.all_objects.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
         """adding zombies, half to left side and half to other"""
-        #for i in range(ZOMBIES_AMOUNT):
-        #    self.all_objects.append(Zombie(name="zombie " + str(i),
-        #                                   start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
-        #                                   random.randint(400, 700)]))
-#
+        for i in range(ZOMBIES_AMOUNT):
+           self.all_objects.append(Zombie(name="zombie " + str(i),
+                                          start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
+                                          random.randint(400, 700)]))
+# #
         """add 2 zombies to test a change direction algorithm"""
         zombie_left = Zombie(name="zombie1 ", start_position=[400, SCREEN_HEIGHT / 2])
         zombie_left.direction_np = RIGHT_np
@@ -93,6 +94,12 @@ class Game:
 
         if self.player.HP <= 0:
             self.state = END
+
+        if self.player.attack is True:
+            fireball = FireBall(name="zombie1", start_position=self.player.position_np - 30,
+                                direction=self.player.direction_np)
+            self.all_objects.append(fireball)
+            self.player.attack = False
 
     def fill_grid_np(self):
         """fill game grid for all objects in the game"""
@@ -163,12 +170,18 @@ class Game:
                     """push grid"""
                     self.fill_grid_np()
                     """check position in grid"""
-                    for i in np.arange(len(self.all_objects)):
-                        obj = self.all_objects[i]
+                    self.check_player_hp()
+                    for obj in self.all_objects:
+                        obj.motions()
+                        if obj.state is DEAD:
+                            self.all_objects.remove(obj)
                         if obj is not self.player:
                             self.get_reaction(obj)
-                        obj.motions()
-                    self.check_player_hp()
+
+                    # for obj in self.all_objects:
+                    #     if obj.state == DEAD:
+                    #         self.all_objects.remove(obj)
+
                 elif self.state == END:
                     self.all_objects = []
 
