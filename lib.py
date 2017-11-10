@@ -62,8 +62,8 @@ def by_position_x_get_key(obj):
 
 @jit(nopython=True)
 def get_grid_xy(position_np, obj_size):
-    x = int(position_np[X] / obj_size[X] * 2)
-    y = int(position_np[Y] / obj_size[Y] * 2)
+    x = int((position_np[X] + obj_size[X] / 2) / obj_size[X] * 2)
+    y = int((position_np[Y] + obj_size[Y] / 2) / obj_size[Y] * 2)
 
     if x < 0:
         x = 0
@@ -91,16 +91,16 @@ def get_vec_view_and_distance(first_position_np, second_position_np, direction_n
 
 
 def get_grid_visible(direction_np, rad):
-    if np.dot(direction_np, UP_np) == 0 or np.dot(direction_np, DOWN_np):
-        radx = [-rad, rad - 1]
-        if np.dot(direction_np, UP_np) == 0:
-            rady = [0, rad - 1]
+    if np.dot(direction_np, UP_np) == 1 or np.dot(direction_np, DOWN_np) == 1:
+        radx = [-rad, rad + 2]
+        if np.dot(direction_np, UP_np) == 1:
+            rady = [-rad, 1]
         else:
-            rady = [-rad, 0]
+            rady = [0, rad + 1]
     else:
-        rady = [-rad, rad - 1]
-        if np.dot(direction_np, RIGHT_np):
-            radx = [0, rad - 1]
+        rady = [-rad, rad + 1]
+        if np.dot(direction_np, RIGHT_np) == 1:
+            radx = [0, rad + 1]
         else:
-            radx = [-rad, 0]
+            radx = [-rad, 1]
     return radx, rady

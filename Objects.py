@@ -18,7 +18,8 @@ class CommonObjects:
                                      start_position[Y] + image_size[Y] / 2])
 
     def render(self, screen):
-        screen.blit(pygame.image.load(self.image_path), (self.position_np[X], self.position_np[Y]))
+        screen.blit(pygame.image.load(self.image_path), (self.position_np[X],
+                                                         self.position_np[Y]))
 
 
 class MovingObjects(CommonObjects):
@@ -43,6 +44,7 @@ class MovingObjects(CommonObjects):
         """test view zone"""
         self.visible_objects = None
         self.visible_distance = 0
+        self.view_rad = 0
         """adding persons images: images[НАПРАВЛЕНИЕ][ВИД АНИМАЦИИ]"""
         temp = pygame.image.load(image_path).convert_alpha()
         for i in range(len([RIGHT, DOWN, LEFT, UP])):

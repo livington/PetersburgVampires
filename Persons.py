@@ -86,12 +86,13 @@ class Enemy(Persons):
                  name="Enemy"):
         Persons.__init__(self, image_path, image_size, speed, start_position, game_zone, name)
         self.damage = damage
+        self.view_rad = 2
 
     def motions(self):
         """ by default enemies goes from edge to edge, and spin randomly"""
 
-        # if random.randint(0, 100) == 5:
-        #     self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
+        if random.randint(0, 100) == 5:
+            self.direction_np = random.choice([LEFT_np, RIGHT_np, UP_np, DOWN_np])
         if Persons.motions(self) is False:
             self.direction_np = -1*self.direction_np
 
@@ -126,6 +127,8 @@ class Zombie(Enemy):
         self.state = MOVE
         self.catch = catch
         self.damage_zone = self.catch/5
+        self.HP = 100
+        self.view_rad = 3
 
     def motions(self):
         """test example for Zombies motions"""
@@ -167,7 +170,7 @@ class Zombie(Enemy):
                 self.state = MOVE
             #pass
         elif type(self.visible_objects) is Zombie and self.state not in [CATCH, STOP]:
-            if 0 < self.visible_distance < 3:
+            if 0 < self.visible_distance < 2:
                 vec_distance, vec_enemy_view, distance = get_vec_view_and_distance(self.position_np,
                                                                                    self.visible_objects.position_np,
                                                                                    self.direction_np)
@@ -191,13 +194,14 @@ class FireBall(MovingObjects):
     def __init__(self,
                  image_path=FIREBALL_PNG_PATH,
                  image_size=[64, 64],
-                 speed=PLAYER_SPEED*2,
+                 speed=FIREBALL_SPEED,
                  start_position=[START_X, START_Y],
                  game_zone=GAME_SCREEN,
                  name="MovingObjects",
                  direction=UP_np):
         MovingObjects.__init__(self, image_path, image_size, speed, start_position, game_zone, name, direction)
         self.damage = 100
+        self.view_rad = 1
 
     def motions(self):
         if MovingObjects.motions(self) is False:
@@ -213,11 +217,11 @@ class FireBall(MovingObjects):
         """The reaction depends of the type of visible object"""
 
         if type(self.visible_objects) is Zombie:
-            if 0 < self.visible_distance < 3:
-                vec_distance, vec_enemy_view, distance = get_vec_view_and_distance(self.position_np,
-                                                                                   self.visible_objects.position_np,
-                                                                                   self.direction_np)
-                """if Zombie see Player it will be move and won't change his direction"""
-                if vec_enemy_view > 0 and distance <= 15:
-                    self.punch(self.visible_objects)
-                    self.state = DEAD
+            if 0 < self.visible_distance < self.view_rad*2 + 1:
+                # vec_distance, vec_enemy_view, distance = get_vec_view_and_distance(self.position_np + 30,
+                #                                                                    self.visible_objects.position_np + 30,
+                #                                                                    self.direction_np)
+                # """if Zombie see Player it will be move and won't change his direction"""
+                # if distance <= 60:
+                self.punch(self.visible_objects)
+                self.state = DEAD

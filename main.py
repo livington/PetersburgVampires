@@ -19,6 +19,7 @@ class Game:
         pygame.init()
         pygame.font.init()
         self.font = pygame.font.Font('C:\Windows\Fonts\Arial.TTF', 50)
+        self.debug_font = pygame.font.Font('C:\Windows\Fonts\Arial.TTF', 20)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -49,6 +50,22 @@ class Game:
         elif self.state == GAME:
             """rendering enemies and player"""
             for obj in self.all_objects:
+                # text = self.debug_font.render("koor:" + str(obj.position_np), True, (255, 0, 0))
+                # self.screen.blit(text, (obj.position_np[X], obj.position_np[Y]))
+
+                # text = self.debug_font.render("x", True, (255, 0, 0))
+                # self.screen.blit(text, (obj.position_np[X]+obj.image_size[X], obj.position_np[Y]))
+                #
+                # text = self.debug_font.render("x", True, (255, 0, 0))
+                # self.screen.blit(text, (obj.position_np[X], obj.position_np[Y]+obj.image_size[Y]))
+                #
+                # text = self.debug_font.render("x", True, (255, 0, 0))
+                # self.screen.blit(text, (obj.position_np[X]+obj.image_size[X], obj.position_np[Y]+obj.image_size[Y]))
+                #
+                # x, y = get_grid_xy(obj.position_np, ZOMBIE_SIZE)
+                # text = self.debug_font.render("x_grid: " + str(x) + ",y_grid: " + str(y), True, (255, 0, 0))
+                # self.screen.blit(text, (obj.position_np[X], obj.position_np[Y]+20))
+
                 obj.render(self.screen)
             """rendering HP status"""
             text = self.font.render("HP: " + str(self.player.HP), True, (255, 0, 0))
@@ -66,24 +83,24 @@ class Game:
         #    self.all_objects.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
         """adding zombies, half to left side and half to other"""
         for i in range(ZOMBIES_AMOUNT):
-           self.all_objects.append(Zombie(name="zombie " + str(i),
-                                          start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
-                                          random.randint(400, 700)]))
-# #
+            self.all_objects.append(Zombie(name="zombie " + str(i),
+                                           start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
+                                           random.randint(400, 700)]))
+
         """add 2 zombies to test a change direction algorithm"""
-        zombie_left = Zombie(name="zombie1 ", start_position=[400, SCREEN_HEIGHT / 2])
+        zombie_left = Zombie(name="zombie_left ", start_position=[400, SCREEN_HEIGHT / 2])
         zombie_left.direction_np = RIGHT_np
         self.all_objects.append(zombie_left)
 
-        zombie_right = Zombie(name="zombie1 ", start_position=[SCREEN_WIDTH-400, SCREEN_HEIGHT / 2])
+        zombie_right = Zombie(name="zombie_right ", start_position=[SCREEN_WIDTH-400, SCREEN_HEIGHT / 2])
         zombie_right.direction_np = LEFT_np
         self.all_objects.append(zombie_right)
 
-        zombie_up = Zombie(name="zombie1 ", start_position=[SCREEN_WIDTH/2, SCREEN_HEIGHT/2])
+        zombie_up = Zombie(name="zombie_up ", start_position=[SCREEN_WIDTH/2, SCREEN_HEIGHT/2])
         zombie_up.direction_np = DOWN_np
         self.all_objects.append(zombie_up)
 
-        zombie_down = Zombie(name="zombie1 ", start_position=[SCREEN_WIDTH/2, SCREEN_HEIGHT])
+        zombie_down = Zombie(name="zombie_down ", start_position=[SCREEN_WIDTH/2, SCREEN_HEIGHT])
         zombie_down.direction_np = UP_np
         self.all_objects.append(zombie_down)
 
@@ -143,14 +160,17 @@ class Game:
         """loop for all objects, get reaction"""
 
         x, y = get_grid_xy(obj.position_np, ZOMBIE_SIZE)
-        radx, rady = get_grid_visible(obj.direction_np, 3)
+        radx, rady = get_grid_visible(obj.direction_np, obj.view_rad)
         for i in np.arange(radx[MIN], radx[MAX]):
             for j in np.arange(rady[MIN], rady[MAX]):
-                get_obj = self.grid_np[0][(y + j)*GRID_WIDTH + (x + i)]
-                if get_obj is not None:
-                    obj.visible_objects = get_obj
-                    obj.visible_distance = abs(i) + abs(j)
-                    obj.reaction()
+                if i == 0 and j == 0:
+                    pass
+                else:
+                    get_obj = self.grid_np[0][(y + j)*GRID_WIDTH + (x + i)]
+                    if get_obj is not None:
+                        obj.visible_objects = get_obj
+                        obj.visible_distance = abs(i) + abs(j)
+                        obj.reaction()
 
     def main(self):
         """main program loop"""
@@ -168,19 +188,17 @@ class Game:
                         self.all_objects.append(self.player)
                         self.add_enemies()
                     """push grid"""
+                    self.check_player_hp()
                     self.fill_grid_np()
                     """check position in grid"""
-                    self.check_player_hp()
-                    for obj in self.all_objects:
-                        obj.motions()
-                        if obj.state is DEAD:
-                            self.all_objects.remove(obj)
-                        if obj is not self.player:
-                            self.get_reaction(obj)
 
-                    # for obj in self.all_objects:
-                    #     if obj.state == DEAD:
-                    #         self.all_objects.remove(obj)
+                    for obj in self.all_objects:
+                        if obj is not self.player:
+                            if obj.state is DEAD:
+                                self.all_objects.remove(obj)
+                            else:
+                                self.get_reaction(obj)
+                        obj.motions()
 
                 elif self.state == END:
                     self.all_objects = []
