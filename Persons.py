@@ -4,15 +4,10 @@ import numpy as np
 import pygame
 from Objects import MovingObjects
 
-from numpy.linalg import norm
-from collections import deque
-
 
 class Persons(MovingObjects):
     """
-    class Persons общий класс для всех персонажей, последующие классы наследуются от него, имеет общие атрибуты
-    характерные для каждого класса
-    """
+    class Persons is base class for all persons in my game"""
 
     def __init__(self, image_path,
                  image_size,
@@ -28,9 +23,7 @@ class Persons(MovingObjects):
 
 class Player(Persons):
     """
-    class Player наследуется от Persons, переопределяю __init__ для записи по дефолту адресса изображений главного персонажа/игрока
-    а также для записи зоны движения и названия экзмепляра. Характерным отличием евляется метод motions для определения движения игрока
-    """
+    class Player inheritance by Persons, overwrite __init__ """
 
     def __init__(self, image_path=PLAYER_PNG_PATH,
                  image_size=PLAYER_SIZE,
@@ -97,21 +90,10 @@ class Enemy(Persons):
             self.direction_np = -1*self.direction_np
 
     def punch(self, player):
-        """загатовка для атаки, каждую секунду уменьшае хп на велечинну урона для объекта"""
+        """decrease player on value quantity self.damage"""
 
         player.HP -= self.damage
         print(player.HP)
-
-
-class Bat(Enemy):
-    def __init__(self, damage=0,
-                 speed=VAMPIRE_SPEED,
-                 image_path=BAT_PNG_PATH,
-                 image_size=VAMPIRE_SIZE,
-                 start_position=[START_X, START_Y],
-                 game_zone=VAMPIRE_ZONE,
-                 name="Bat"):
-        Enemy.__init__(self, damage, image_path, image_size, speed, start_position, game_zone, name)
 
 
 class Zombie(Enemy):

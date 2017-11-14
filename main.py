@@ -22,6 +22,8 @@ class Game:
         self.debug_font = pygame.font.Font('C:\Windows\Fonts\Arial.TTF', 20)
 
     def handle_events(self):
+        """Processing keyboard events depending by game state"""
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -31,7 +33,7 @@ class Game:
                     self.player.event = event
             elif self.state == GAME:
                 self.player.event = event
-            elif self.state == END:
+            elif self.state in [END, WIN]:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_KP_ENTER:
                         self.state = GAME
@@ -50,6 +52,7 @@ class Game:
         elif self.state == GAME:
             """rendering enemies and player"""
             for obj in self.all_objects:
+                """debug mode"""
                 # text = self.debug_font.render("koor:" + str(obj.position_np), True, (255, 0, 0))
                 # self.screen.blit(text, (obj.position_np[X], obj.position_np[Y]))
 
@@ -73,14 +76,15 @@ class Game:
         elif self.state == END:
             """The end screen"""
             self.screen.blit(pygame.image.load(END_BUTTON_PATH), (SCREEN_WIDTH / 5, SCREEN_HEIGHT / 8))
+        elif self.state == WIN:
+            text = self.font.render("YOU WIN, REPEAT? ", True, (255, 0, 0))
+            self.screen.blit(text, (SCREEN_HEIGHT / 2, SCREEN_WIDTH / 2))
 
         pygame.display.flip()
 
     def add_enemies(self):
         """add all enemies"""
 
-        #for i in range(10):
-        #    self.all_objects.append(Bat(start_position=[random.randint(0, SCREEN_WIDTH), random.randint(0, 200)]))
         """adding zombies, half to left side and half to other"""
         for i in range(ZOMBIES_AMOUNT):
             self.all_objects.append(Zombie(name="zombie " + str(i),
@@ -103,8 +107,6 @@ class Game:
         zombie_down = Zombie(name="zombie_down ", start_position=[SCREEN_WIDTH/2, SCREEN_HEIGHT])
         zombie_down.direction_np = UP_np
         self.all_objects.append(zombie_down)
-
-        # self.all_objects.extend(self.enemies)
 
     def check_player_hp(self):
         """check player HP, if it's zero, game will stop"""
@@ -177,18 +179,20 @@ class Game:
 
         old_k_delay, old_k_interval = pygame.key.get_repeat()
         pygame.key.set_repeat(50, 50)
+
+        clk = pygame.time.Clock()
         try:
             while self.running is True:
                 self.render()
                 self.handle_events()
+                clk.tick(cnst_ticks)
 
                 if self.state == GAME:
-                    if old_state in [FIRST_ENTER, END]:
+                    if old_state in [FIRST_ENTER, END, WIN]:
                         self.player.HP = MAX_HP
                         self.all_objects.append(self.player)
                         self.add_enemies()
                     """push grid"""
-                    self.check_player_hp()
                     self.fill_grid_np()
                     """check position in grid"""
 
@@ -200,7 +204,11 @@ class Game:
                                 self.get_reaction(obj)
                         obj.motions()
 
-                elif self.state == END:
+                    self.check_player_hp()
+                    if len(self.all_objects) < 2:
+                        self.state = WIN
+
+                elif self.state in [END, WIN]:
                     self.all_objects = []
 
                 old_state = self.state
