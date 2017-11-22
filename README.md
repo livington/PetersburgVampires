@@ -1,5 +1,5 @@
 # PetersburgVampires
-# Rid of monsters and clean St. Petersburg's Palace Square 
+# You mast rid of monsters and clean St. Petersburg's Palace Square 
 # System requirements:
 # 1)Python 3.5 and more
 # 2)PyGame
