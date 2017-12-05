@@ -5,6 +5,6 @@
 # 2)PyGame
 # 3)NumPy
 # 4)numba
-# All requirements are installing by pip except Python of course
+# All requirements are installed by pip except Python of course
 # How to RUN:
 # In main folder run terminal and there: python main.py
