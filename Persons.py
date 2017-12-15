@@ -97,14 +97,20 @@ class Enemy(Persons):
 
 
 class Zombie(Enemy):
-    def __init__(self, catch=150,
+    def __init__(self,
+                 start_position=None,
+                 catch=150,
                  damage=0.5,
                  image_path=ZOMBIE_PNG_PATH,
                  image_size=ZOMBIE_SIZE,
                  speed=ZOMBIE_SPEED,
-                 start_position=[START_X, START_Y],
                  game_zone=GAME_ZONE_DEFAULT,
                  name="Zombie"):
+        if start_position is None:
+            start_position = [
+                random.randint(game_zone[X][MIN], game_zone[X][MAX]),
+                random.randint(game_zone[Y][MIN], game_zone[Y][MAX])
+            ]
         Enemy.__init__(self, damage, image_path, image_size, speed, start_position, game_zone, name)
         self.state = MOVE
         self.catch = catch

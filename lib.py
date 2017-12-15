@@ -60,19 +60,21 @@ def by_position_x_get_key(obj):
     return obj.position_np[X]
 
 
-@jit(nopython=True)
+@jit()
 def get_grid_xy(position_np, obj_size):
     x = int((position_np[X] + obj_size[X] / 2) / obj_size[X] * 2)
     y = int((position_np[Y] + obj_size[Y] / 2) / obj_size[Y] * 2)
 
     if x < 0:
         x = 0
+    else:
+        if x >= GRID_WIDTH:
+            x = GRID_WIDTH - 1
     if y < 0:
         y = 0
-    if x >= GRID_WIDTH:
-        x = GRID_WIDTH - 1
-    if y >= GRID_HEIGHT:
-        y = GRID_HEIGHT - 1
+    else:
+        if y >= GRID_HEIGHT:
+            y = GRID_HEIGHT - 1
 
     return x, y
 
@@ -90,6 +92,7 @@ def get_vec_view_and_distance(first_position_np, second_position_np, direction_n
     return vec_distance, vec_enemy_view, distance
 
 
+# @jit()
 def get_grid_visible(direction_np, rad):
     if np.dot(direction_np, UP_np) == 1 or np.dot(direction_np, DOWN_np) == 1:
         radx = [-rad, rad + 2]

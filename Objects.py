@@ -16,10 +16,33 @@ class CommonObjects:
         self.image_size = image_size
         self.position_np = np.array([start_position[X] + image_size[X] / 2,
                                      start_position[Y] + image_size[Y] / 2])
+        self.position_grid = [0, 0]
+        self.images = pygame.image.load(image_path)
 
     def render(self, screen):
-        screen.blit(pygame.image.load(self.image_path), (self.position_np[X],
-                                                         self.position_np[Y]))
+        screen.blit(self.images, (self.position_np[X], self.position_np[Y]))
+
+
+class Level(CommonObjects):
+    """class CommonObjects include public attributes and methods for all objects in the game world"""
+
+    def __init__(self, image_path,
+                 image_size,
+                 objects,
+                 types,
+                 start_position=[0, 0],
+                 name="Level",
+                 game_zone=GAME_ZONE_DEFAULT):
+
+        CommonObjects.__init__(self, image_path, image_size, start_position, name)
+        self.game_zone = game_zone
+        self.objects = []
+        for key in objects:
+            obj_type = types[key]
+            amount = objects[key][0]
+            kwarg = objects[key][1]
+            for i in range(amount):
+                self.objects.append(obj_type(**kwarg))
 
 
 class MovingObjects(CommonObjects):
@@ -54,7 +77,7 @@ class MovingObjects(CommonObjects):
 
     def render(self, screen):
         screen.blit(self.images[dir_vec_to_base(self.direction_np)][self.animation['view']], (self.position_np[X],
-                                                                                              self.position_np[Y]))
+                                                                          self.position_np[Y]))
 
     def check_ability_to_move(self):
         """check motion ability"""
@@ -103,3 +126,6 @@ class MovingObjects(CommonObjects):
 
     def reaction(self):
         pass
+
+
+

@@ -50,16 +50,16 @@ PLAYER_SIZE = [64, 64]
 VAMPIRE_SIZE = [64, 64]
 ZOMBIE_SIZE = [32, 64]
 
-ZOMBIES_AMOUNT = np.int32(120)
+ZOMBIES_AMOUNT = np.int32(200)
 
-MAX_CELL_SIZE = np.int8(4)
-GRID_WIDTH = np.int32(SCREEN_WIDTH/ZOMBIE_SIZE[X]*2)
-GRID_HEIGHT = np.int32(SCREEN_HEIGHT/ZOMBIE_SIZE[X]*2)
+MAX_CELL_SIZE = 4
+GRID_WIDTH = int(SCREEN_WIDTH/ZOMBIE_SIZE[X]*2)
+GRID_HEIGHT = int(SCREEN_HEIGHT/ZOMBIE_SIZE[X]*2)
 
-PLAYER_SPEED = np.float64(5.)
-VAMPIRE_SPEED = np.float64(2.)
-ZOMBIE_SPEED = np.float64(2.)
-FIREBALL_SPEED = np.float64(8.)
+PLAYER_SPEED = 5.
+VAMPIRE_SPEED = 2.
+ZOMBIE_SPEED = 2.
+FIREBALL_SPEED = 8.
 
 PLAYER_PNG_PATH = "data/player.png"
 BAT_PNG_PATH = "data/vampire2.png"
@@ -80,3 +80,33 @@ MSG_CHANGE_DIRECTION = 1
 MSG_ATACK_PLAYER = 2
 
 cnst_ticks = 30
+
+level_characteristics = {"level1": {"image_path": 'data/background.jpg',
+                                    "image_size": [0, 0],
+                                    "game_zone": GAME_ZONE_DEFAULT,
+                                    "objects": {
+                                        "Zombie": [ZOMBIES_AMOUNT, {'name': "zombie"}]
+                                        }
+                                    },
+                         "level2": {"image_path": 'data/level2.jpg',
+                                    "image_size": [0, 0],
+                                    "game_zone": GAME_ZONE_DEFAULT,
+                                    "objects": {
+                                        "Zombie": [ZOMBIES_AMOUNT, {'name': "zombie"}]
+                                        }
+                                    },
+                         "level3": {"image_path": 'data/level3.jpg',
+                                    "image_size": [0, 0],
+                                    "game_zone": GAME_ZONE_DEFAULT,
+                                    "objects": {
+                                        "Zombie": [ZOMBIES_AMOUNT, {'name': "zombie"}]
+                                        }
+                                    },
+                         "level4": {"image_path": 'data/level4.jpg',
+                                    "image_size": [0, 0],
+                                    "game_zone": GAME_ZONE_DEFAULT,
+                                    "objects": {
+                                        "Zombie": [ZOMBIES_AMOUNT, {'name': "zombie"}]
+                                        }
+                                    }
+                         }

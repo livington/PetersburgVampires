@@ -1,10 +1,17 @@
 # -"- coding: utf-8 -"-
 from Persons import *
 import sys
+import time
+from Constants import level_characteristics
+from Objects import Level
+from six.moves import xrange
+
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.init()
 
 
 class Game:
-    def __init__(self, screen=pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))):
+    def __init__(self, screen=SCREEN):
         self.screen = screen
         self.player = Player()
         self.enemies = []
@@ -12,17 +19,24 @@ class Game:
         self.running = True
         self.state = FIRST_ENTER
         self.all_objects = []
-        self.cell_size = np.zeros((1, GRID_WIDTH * GRID_HEIGHT), dtype=np.int8)
-        self.grid_np = np.empty((GRID_WIDTH + 2, GRID_HEIGHT + 2), dtype=Persons)
+        self.cell_size = [0 for i in range(GRID_HEIGHT*GRID_WIDTH*MAX_CELL_SIZE)]
+        self.grid_np = []
+        """A work with levels"""
+        self.types = {
+            'Zombie': type(Zombie())
+        }
+        self.levels = []
+        self.curient_level = 0
+        self.curient_level_grid = np.array([0, 0])
 
         """init pygame"""
-        pygame.init()
         pygame.font.init()
         self.font = pygame.font.Font('C:\Windows\Fonts\Arial.TTF', 50)
         self.debug_font = pygame.font.Font('C:\Windows\Fonts\Arial.TTF', 20)
+        self.render_time = []
 
     def handle_events(self):
-        """Processing keyboard events depending by game state"""
+        """keyboard event processing is depended by game state"""
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -40,18 +54,29 @@ class Game:
                     elif event.key == pygame.K_n:
                         self.running = False
 
+    def make_levels(self):
+        for each in level_characteristics:
+            kwarg = level_characteristics[each]
+            self.levels.append(Level(name=each, types=self.types, **kwarg))
+
     def render(self):
         """rendering all game state"""
 
-        self.screen.blit(self.background, (0, 0))
+        # self.screen.blit(self.background, (0, 0))
 
         """work with ever game state"""
         if self.state == FIRST_ENTER:
             """welcome screen))"""
-            self.screen.blit(pygame.image.load(START_BUTTON_PATH), (SCREEN_WIDTH / 5, SCREEN_HEIGHT / 8))
+            text = self.font.render("PETERSBURG VAMPIRES", True, (255, 0, 0))
+            self.screen.blit(text, (SCREEN_WIDTH / 5, SCREEN_HEIGHT / 3))
+            text = self.font.render("press ENTER to start", True, (255, 0, 0))
+            self.screen.blit(text, (SCREEN_WIDTH / 4, SCREEN_HEIGHT / 2))
         elif self.state == GAME:
             """rendering enemies and player"""
-            for obj in self.all_objects:
+            old_time = time.time()
+            self.levels[self.curient_level].render(self.screen)
+            # self.levels[self.curient_level].render(self.screen)
+            for obj in self.levels[self.curient_level].objects:
                 """debug mode"""
                 # text = self.debug_font.render("koor:" + str(obj.position_np), True, (255, 0, 0))
                 # self.screen.blit(text, (obj.position_np[X], obj.position_np[Y]))
@@ -73,6 +98,8 @@ class Game:
             """rendering HP status"""
             text = self.font.render("HP: " + str(self.player.HP), True, (255, 0, 0))
             self.screen.blit(text, (0, 10))
+            new_time = time.time()
+            self.render_time.append(new_time - old_time)
         elif self.state == END:
             """The end screen"""
             self.screen.blit(pygame.image.load(END_BUTTON_PATH), (SCREEN_WIDTH / 5, SCREEN_HEIGHT / 8))
@@ -87,9 +114,7 @@ class Game:
 
         """adding zombies, half to left side and half to other"""
         for i in range(ZOMBIES_AMOUNT):
-            self.all_objects.append(Zombie(name="zombie " + str(i),
-                                           start_position=[SCREEN_WIDTH*int(i > ZOMBIES_AMOUNT / 2),
-                                           random.randint(400, 700)]))
+            self.all_objects.append(Zombie(name="zombie " + str(i)))
 
         """add 2 zombies to test a change direction algorithm"""
         zombie_left = Zombie(name="zombie_left ", start_position=[400, SCREEN_HEIGHT / 2])
@@ -115,23 +140,23 @@ class Game:
             self.state = END
 
         if self.player.attack is True:
-            fireball = FireBall(name="zombie1", start_position=self.player.position_np - 30,
+            fireball = FireBall(name="FireBall", start_position=self.player.position_np - 30,
                                 direction=self.player.direction_np)
-            self.all_objects.append(fireball)
+            self.levels[self.curient_level].objects.append(fireball)
             self.player.attack = False
 
     def fill_grid_np(self):
         """fill game grid for all objects in the game"""
 
-        self.grid_np = np.empty((1, GRID_HEIGHT*GRID_HEIGHT), dtype=Persons)
-        grid = self.grid_np[0]
-        cell_size = self.cell_size[0]
-        for i in np.arange(len(self.all_objects)):
-            obj = self.all_objects[i]
-            x, y = get_grid_xy(obj.position_np, ZOMBIE_SIZE)
+        self.grid_np = [None for i in range(GRID_HEIGHT*GRID_HEIGHT*MAX_CELL_SIZE)]
+        grid = self.grid_np
+        # cell_size = self.cell_size
+        for obj in self.levels[self.curient_level].objects:
+            obj.position_grid[X], obj.position_grid[Y] = get_grid_xy(obj.position_np, ZOMBIE_SIZE)
+            x, y = obj.position_grid[X], obj.position_grid[Y]
             grid[y*GRID_WIDTH + x] = obj
-            if cell_size[y*GRID_WIDTH + x] < MAX_CELL_SIZE:
-                cell_size[y*GRID_WIDTH + x] += 1
+            # if cell_size[y*GRID_WIDTH + x] < MAX_CELL_SIZE:
+            #     cell_size[y*GRID_WIDTH + x] += 1
 
     def grid_update_np(self):
         grid = self.grid_np[0]
@@ -161,24 +186,50 @@ class Game:
     def get_reaction(self, obj):
         """loop for all objects, get reaction"""
 
-        x, y = get_grid_xy(obj.position_np, ZOMBIE_SIZE)
+        x, y = obj.position_grid[X], obj.position_grid[Y]
+
         radx, rady = get_grid_visible(obj.direction_np, obj.view_rad)
-        for i in np.arange(radx[MIN], radx[MAX]):
-            for j in np.arange(rady[MIN], rady[MAX]):
+        for i in range(radx[MIN], radx[MAX]):
+            for j in range(rady[MIN], rady[MAX]):
                 if i == 0 and j == 0:
                     pass
                 else:
-                    get_obj = self.grid_np[0][(y + j)*GRID_WIDTH + (x + i)]
+                    get_obj = self.grid_np[(y + j)*GRID_WIDTH + (x + i)]
                     if get_obj is not None:
                         obj.visible_objects = get_obj
                         obj.visible_distance = abs(i) + abs(j)
                         obj.reaction()
+
+    def change_level(self):
+        if self.player.check_ability_to_move() is False:
+            self.curient_level_grid += self.player.direction_np
+            amount_axes = int(len(self.levels) // 2)
+            buf_level_number = self.curient_level_grid[X]*amount_axes + self.curient_level_grid[Y]
+            if buf_level_number in range(len(self.levels)) \
+                    and amount_axes > self.curient_level_grid[X] >= 0 \
+                    and amount_axes > self.curient_level_grid[Y] >= 0:
+                self.levels[self.curient_level].objects.remove(self.player)
+                self.curient_level = buf_level_number
+
+                if np.dot(self.player.direction_np, LEFT_np) == 1:
+                    self.player.position_np[X] = GAME_ZONE_DEFAULT[X][MAX] - 50
+                if np.dot(self.player.direction_np, RIGHT_np) == 1:
+                    self.player.position_np[X] = GAME_ZONE_DEFAULT[X][MIN] + 50
+                if np.dot(self.player.direction_np, DOWN_np) == 1:
+                    self.player.position_np[Y] = GAME_ZONE_DEFAULT[Y][MIN] - 50
+                if np.dot(self.player.direction_np, UP_np) == 1:
+                    self.player.position_np[Y] = GAME_ZONE_DEFAULT[Y][MAX] + 50
+
+                self.levels[self.curient_level].objects.append(self.player)
+            else:
+                self.curient_level_grid -= self.player.direction_np
 
     def main(self):
         """main program loop"""
 
         old_k_delay, old_k_interval = pygame.key.get_repeat()
         pygame.key.set_repeat(50, 50)
+        all_time = []
 
         clk = pygame.time.Clock()
         try:
@@ -190,31 +241,45 @@ class Game:
                 if self.state == GAME:
                     if old_state in [FIRST_ENTER, END, WIN]:
                         self.player.HP = MAX_HP
-                        self.all_objects.append(self.player)
-                        self.add_enemies()
+                        self.curient_level = 0
+                        self.make_levels()
+                        self.levels[self.curient_level].objects.append(self.player)
+                        # self.add_enemies()
+                        first_enter_time = time.time()
+                        objects_amount = len(self.levels[self.curient_level].objects)
+
+                    old_time = time.time()
                     """push grid"""
                     self.fill_grid_np()
-                    """check position in grid"""
 
-                    for obj in self.all_objects:
+                    """check position in grid"""
+                    for obj in self.levels[self.curient_level].objects:
                         if obj is not self.player:
                             if obj.state is DEAD:
-                                self.all_objects.remove(obj)
+                                self.levels[self.curient_level].objects.remove(obj)
                             else:
                                 self.get_reaction(obj)
                         obj.motions()
+                    all_time.append(time.time() - old_time)
 
+                    # if time.time() - first_enter_time > 15:
+                    #     self.player.HP = 0
+                            
                     self.check_player_hp()
-                    if len(self.all_objects) < 2:
+                    if len(self.levels[self.curient_level].objects) < 2:
                         self.state = WIN
 
+                    self.change_level()
+
                 elif self.state in [END, WIN]:
-                    self.all_objects = []
+                    self.levels = []
 
                 old_state = self.state
         finally:
             pygame.key.set_repeat(old_k_delay, old_k_interval)
             pygame.quit()
+            print("objects amount: {0}, iteration time: {1}".format(objects_amount, sum(all_time) / len(all_time)))
+            print("render iteration time: {0}".format(sum(self.render_time) / len(self.render_time)))
 
 if __name__ == '__main__':
     petersburg_vampires = Game()
