@@ -8,3 +8,4 @@
 # All requirements are installed by pip except Python of course
 # How to RUN:
 # In main folder run terminal and there: python main.py
+# sonar test
